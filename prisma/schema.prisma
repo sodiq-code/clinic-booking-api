@@ -1,0 +1,65 @@
+// Production schema — PostgreSQL (used on Vercel / staging / prod).
+// Generate & push with: bun run db:generate  &&  bun run db:push
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// A bookable appointment window. `bookedBookingId` is the Level 3 claim marker:
+// NULL  -> slot is available
+// <id>  -> slot is held by the confirmed booking with that id
+// The claim is set with an atomic conditional UPDATE (see src/app/bookings/route.ts)
+// so double-booking is impossible even under true concurrency, on both SQLite & Postgres.
+model Slot {
+  id              String    @id
+  provider        String
+  start           DateTime
+  end             DateTime
+  bookedBookingId String?
+
+  @@index([provider])
+  @@index([start])
+}
+
+model Booking {
+  id             String   @id @default(cuid())
+  slotId         String
+  name           String
+  // stored lowercased (Level 2)
+  email          String
+  // "confirmed" | "cancelled"
+  status         String
+  createdAt      DateTime @default(now())
+
+  // Level 4 idempotency (kept on the booking row for convenience)
+  idempotencyKey String?
+  bodyHash       String?
+
+  @@index([email, createdAt])
+  @@index([email])
+  @@index([slotId])
+}
+
+// Dedicated idempotency cache so we can replay NON-201 responses too
+// (the spec requires the SAME status code on retry, including 400/404/409/429).
+model IdempotencyRecord {
+  key          String   @id
+  bodyHash     String
+  statusCode   Int
+  responseBody String
+  bookingId    String?
+  createdAt    DateTime @default(now())
+}
+
+// Level 5 rate limiting: at most 5 attempts per email per rolling 60s window.
+model RateLimitAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
