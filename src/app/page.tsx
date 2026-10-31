@@ -68,7 +68,10 @@ export default function Page() {
     }
     setSlotsLoading(true);
     setSlotsError(null);
-    setConfirmation(null);
+    // NOTE: do NOT clear `confirmation` here — loadSlots() is also called right
+    // after a successful booking to refresh availability, and clearing the
+    // confirmation then would wipe it before the user sees it. The confirmation
+    // is cleared when the user picks a new slot (onClick below).
     try {
       const url = providerFilter
         ? `/slots?provider=${encodeURIComponent(providerFilter)}`
