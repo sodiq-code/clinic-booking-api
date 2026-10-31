@@ -1,11 +1,21 @@
-// Production schema — PostgreSQL (used on Vercel / staging / prod).
-// Generate & push with: bun run db:generate  &&  bun run db:push
+// Prisma schema — Turso (libSQL) for both local dev and production.
+//
+// We use the `sqlite` provider with the `driverAdapters` preview feature, and
+// the @prisma/adapter-libsql driver adapter in src/lib/db.ts. This lets ONE
+// schema serve both environments:
+//   - local dev:  DATABASE_URL="file:./prisma/dev.db"        (local SQLite file)
+//   - production: DATABASE_URL="libsql://<host>"             (Turso)
+//                 DATABASE_AUTH_TOKEN="<turso db auth token>"
+//
+// Generate & push:
+//   bun run db:generate   # generates the Prisma Client (with driver adapter)
+//   bun run db:push       # creates/updates tables in whatever DATABASE_URL points to
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -13,7 +23,7 @@ datasource db {
 // NULL  -> slot is available
 // <id>  -> slot is held by the confirmed booking with that id
 // The claim is set with an atomic conditional UPDATE (see src/app/bookings/route.ts)
-// so double-booking is impossible even under true concurrency, on both SQLite & Postgres.
+// so double-booking is impossible even under true concurrency, on both SQLite & libSQL.
 model Slot {
   id              String    @id
   provider        String

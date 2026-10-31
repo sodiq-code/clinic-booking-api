@@ -2,19 +2,20 @@
   "name": "clinic-booking-api",
   "version": "1.0.0",
   "private": true,
-  "description": "Clinic Booking API + web page (Koya Cohort 4 — Task BUILD-1). Next.js 16 App Router, TypeScript, Prisma.",
+  "description": "Clinic Booking API + web page (Koya Cohort 4 \u2014 Task BUILD-1). Next.js 16 App Router, TypeScript, Prisma.",
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build",
+    "build": "prisma generate && bun run scripts/migrate.ts && next build",
     "start": "next start -p 3001",
     "lint": "eslint .",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
-    "db:push:local": "prisma db push --schema=prisma/schema.local.prisma --accept-data-loss",
-    "db:generate:local": "prisma generate --schema=prisma/schema.local.prisma",
-    "seed": "bun run scripts/seed.ts"
+    "seed": "bun run scripts/seed.ts",
+    "migrate": "bun run scripts/migrate.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@prisma/adapter-libsql": "^6.19.0",
     "@prisma/client": "^6.19.2",
     "next": "^16.1.3",
     "react": "^19.2.0",
